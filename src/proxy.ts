@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -44,15 +44,6 @@ export async function middleware(request: NextRequest) {
       url.pathname = "/login";
       return NextResponse.redirect(url);
     }
-  }
-
-  // Protected API routes (except auth endpoints)
-  if (
-    pathname.startsWith("/api") &&
-    !pathname.startsWith("/api/auth") &&
-    !pathname.startsWith("/api-docs")
-  ) {
-    // API routes handle their own auth and return 401
   }
 
   // Redirect authenticated users away from auth pages

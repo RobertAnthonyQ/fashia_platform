@@ -7,14 +7,17 @@ export const generationConfigSchema = z.object({
   location: z.string().optional(),
   pose: z.string().optional(),
   lighting: z.string().optional(),
-  framing: z.string().optional(),
-  camera_angle: z.string().optional(),
+  garment_description: z.string().optional(),
+  image_model: z
+    .enum(["gemini-3-pro-image-preview", "gemini-2.5-flash-image"])
+    .optional()
+    .default("gemini-2.5-flash-image"),
 });
 
 export const createGenerationSchema = z.object({
   model_id: z.string().uuid(),
   garment_id: z.string().uuid(),
-  config: generationConfigSchema.optional().default({}),
+  config: generationConfigSchema.optional(),
   output_type: outputTypeEnum.optional().default("image"),
 });
 

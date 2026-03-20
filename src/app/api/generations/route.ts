@@ -154,6 +154,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Server error" }, { status: 500 });
     }
 
+    // Trigger generation processing asynchronously
+    // We fire-and-forget so the client can start polling immediately
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const cookieHeader = req.headers.get("cookie") ?? "";
+    fetch(`${baseUrl}/api/generations/${data!.id}/process`, {
+      method: "POST",
+      headers: { cookie: cookieHeader },
+    }).catch((err) => {
+      console.error("Failed to trigger generation process:", err);
+    });
+
     return NextResponse.json(data, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 });

@@ -2,19 +2,9 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { listModels, createModel } from "@/src/lib/services/fashion-models";
 import { createFashionModelSchema } from "@/src/lib/validations/fashion-models";
+import { generateModelProfile } from "@/src/lib/ai/generate-model-profile";
+import type { Json } from "@/src/types/database";
 
-/**
- * @swagger
- * /api/models:
- *   get:
- *     summary: List user's fashion models and presets
- *     tags: [Models]
- *     responses:
- *       200:
- *         description: List of models
- *       401:
- *         description: Unauthorized
- */
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -36,41 +26,6 @@ export async function GET() {
   }
 }
 
-/**
- * @swagger
- * /api/models:
- *   post:
- *     summary: Create a new fashion model
- *     tags: [Models]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [name, gender]
- *             properties:
- *               name:
- *                 type: string
- *               gender:
- *                 type: string
- *                 enum: [male, female, non_binary]
- *               country:
- *                 type: string
- *               age:
- *                 type: integer
- *               style:
- *                 type: string
- *               ref_face_url:
- *                 type: string
- *     responses:
- *       201:
- *         description: Created model
- *       400:
- *         description: Validation error
- *       401:
- *         description: Unauthorized
- */
 export async function POST(req: Request) {
   try {
     const supabase = await createClient();
@@ -90,12 +45,45 @@ export async function POST(req: Request) {
       );
     }
 
+    // 1. Create the model in DB
     const { data, error } = await createModel(user.id, parsed.data);
-    if (error) {
+    if (error || !data) {
       return NextResponse.json({ error: "Server error" }, { status: 500 });
     }
 
-    return NextResponse.json(data, { status: 201 });
+    // 2. Generate AI profile in the background (don't block response if it fails)
+    try {
+      const profile = await generateModelProfile({
+        name: data.name,
+        gender: data.gender,
+        age: data.age ?? undefined,
+        country: data.country ?? undefined,
+        style: data.style ?? undefined,
+      });
+
+      await supabase
+        .from("fashion_models")
+        .update({
+          metadata: profile as unknown as Json,
+          description: profile.full_description,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", data.id)
+        .eq("user_id", user.id);
+
+      // Return model with metadata included
+      const { data: updated } = await supabase
+        .from("fashion_models")
+        .select("*")
+        .eq("id", data.id)
+        .single();
+
+      return NextResponse.json(updated ?? data, { status: 201 });
+    } catch (aiError) {
+      console.error("AI profile generation failed:", aiError);
+      // Still return the created model even if AI fails
+      return NextResponse.json(data, { status: 201 });
+    }
   } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }

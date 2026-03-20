@@ -1,4 +1,4 @@
-import { createClient } from "@/src/lib/supabase/server";
+import { createAdminClient } from "@/src/lib/supabase/admin";
 
 type Bucket = "garments" | "model-refs" | "outputs";
 
@@ -8,7 +8,7 @@ export async function uploadFile(
   file: File,
   pathPrefix?: string,
 ) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const ext = file.name.split(".").pop() ?? "jpg";
   const fileName = `${userId}/${pathPrefix ? pathPrefix + "/" : ""}${Date.now()}.${ext}`;
 
@@ -39,7 +39,7 @@ export async function uploadOutput(
 }
 
 export async function getSignedUrl(bucket: Bucket, path: string) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase.storage
     .from(bucket)
     .createSignedUrl(path, 3600); // 1 hour
@@ -48,14 +48,14 @@ export async function getSignedUrl(bucket: Bucket, path: string) {
 }
 
 export async function getPublicUrl(bucket: Bucket, path: string) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data } = supabase.storage.from(bucket).getPublicUrl(path);
 
   return { data: data.publicUrl };
 }
 
 export async function deleteFile(bucket: Bucket, path: string) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { error } = await supabase.storage.from(bucket).remove([path]);
 
   return { error };

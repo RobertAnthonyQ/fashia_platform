@@ -115,13 +115,11 @@ export async function POST(req: Request) {
       );
     }
 
-    // Get public URL
-    const { data: publicUrl } = supabase.storage
-      .from("garments")
-      .getPublicUrl(path);
+    // Build proxy URL (bypasses RLS on private buckets)
+    const proxyUrl = `/api/storage/garments/${path}`;
 
     // Create garment record
-    const { data, error } = await createGarment(user.id, publicUrl.publicUrl);
+    const { data, error } = await createGarment(user.id, proxyUrl);
     if (error) {
       return NextResponse.json({ error: "Server error" }, { status: 500 });
     }
