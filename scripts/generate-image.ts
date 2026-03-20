@@ -23,7 +23,7 @@ async function main() {
   const ai = new GoogleGenAI({ apiKey });
 
   const config = {
-    responseModalities: ['IMAGE', 'TEXT'] as const,
+    responseModalities: ['IMAGE', 'TEXT'] as string[],
   };
 
   const model = 'gemini-3-pro-image-preview';
