@@ -5,6 +5,7 @@ import type { Database } from "@/src/types/database";
 import { BalanceCard } from "./BalanceCard";
 import { CostReference } from "./CostReference";
 import { CreditHistory } from "./CreditHistory";
+import { BuyCreditsSection } from "./BuyCreditsSection";
 
 type CreditLedger = Database["public"]["Tables"]["credit_ledger"]["Row"];
 
@@ -55,6 +56,12 @@ export function CreditsPageClient({
 
       {/* Balance Card */}
       <BalanceCard credits={credits} plan={plan} />
+
+      {/* Buy Credits Section — inline, no navigation needed */}
+      <div id="buy-credits" className="flex flex-col gap-3">
+        <h2 className="font-heading text-[16px] font-semibold text-[#FAFAFA]">Comprar créditos</h2>
+        <BuyCreditsSection />
+      </div>
 
       {/* Cost Reference */}
       <CostReference />

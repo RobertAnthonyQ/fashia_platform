@@ -1,12 +1,21 @@
 import { getGeminiClient } from "./gemini";
 import { createAdminClient } from "@/src/lib/supabase/admin";
 
+export interface SuggestionItem {
+  label: string;
+  detail: string;
+}
+
 export interface ArtDirectorSuggestions {
   prenda_principal: string;
-  conjuntos_accesorios_recomendados: string[];
-  lugares_recomendados: string[];
-  poses_recomendadas: string[];
-  iluminacion_recomendada: string[];
+  target: string;
+  incluye_calzado: boolean;
+  calzado: SuggestionItem[];
+  accesorios: SuggestionItem[];
+  complementos: SuggestionItem[];
+  locacion: SuggestionItem[];
+  pose: SuggestionItem[];
+  iluminacion: SuggestionItem[];
 }
 
 /**
@@ -53,53 +62,67 @@ async function downloadImageAsBase64(
 
 /**
  * Art Director AI: analyzes garment image and suggests creative direction.
- * Uses gemini-3-flash-preview for fast text analysis.
+ * Adapts suggestions based on model gender.
  */
 export async function analyzeGarment(
   garmentImageUrl: string,
+  modelGender?: string,
 ): Promise<ArtDirectorSuggestions> {
   const ai = getGeminiClient();
 
-  const prompt = `# ROLE AND CONTEXT
-You are the Senior Art Director and Lead Fashion Stylist for 'Fashia', a high-end commercial fashion agency. Your goal is to analyze the garment provided in the image and conceptualize its best visual presentation.
+  const genderContext = modelGender
+    ? `La modelo que vestira esta prenda es: ${modelGender}. Adapta TODAS las sugerencias (accesorios, calzado, complementos, poses) para que sean apropiadas y con estilo para una modelo ${modelGender}.`
+    : "Infiere el genero probable del usuario de la prenda y adapta las sugerencias.";
 
-# TASK
-Visually analyze the garment. Extract its real visual characteristics. Then, suggest complementary creative direction.
+  const prompt = `# ROL
+Eres el Director de Arte Senior de 'Fashia', una agencia de fotografia de moda comercial. Analiza la prenda y sugiere direccion creativa.
 
-# CRITICAL RULES
-1. ACCESSORIES MUST BE COMPLETE SETS: Never suggest just one item. Always suggest a COMPLETE complementary outfit set (e.g., "White chunky sneakers, white ankle socks, silver watch, and aviator sunglasses"). ALWAYS INCLUDE FOOTWEAR so the model is not barefoot.
-2. LIGHTING: Suggest professional lighting setups. The FIRST option MUST be the absolute best, most flattering lighting for this specific fabric and style.
-3. Respond SOLELY and EXCLUSIVELY with a valid JSON object. DO NOT use \`\`\`json formatting.
+# CONTEXTO
+${genderContext}
 
-# REQUIRED JSON STRUCTURE:
+# TAREA
+1. Analiza la prenda visualmente (tipo, colores, patrones, textura, estilo).
+2. Determina si el calzado seria visible/relevante para este tipo de prenda. Ejemplo: un gorro, bufanda o prenda solo de torso superior NO necesita calzado. Outfits completos, pantalones, faldas, vestidos o shorts SI necesitan calzado.
+3. Sugiere items INDIVIDUALES (no conjuntos agrupados) para cada categoria.
+4. Para locacion, pose e iluminacion: proporciona un "label" CORTO y un "detail" completo.
+
+# REGLAS IMPORTANTES
+- Cada "label" debe ser CORTO: 2-4 palabras EN ESPANOL que resuman la opcion visualmente
+- Cada "detail" debe ser una descripcion COMPLETA EN INGLES, optimizada como prompt para generacion de imagenes con IA
+- Sugiere 3-5 items por categoria
+- Los accesorios deben ser items INDIVIDUALES, no conjuntos agrupados
+- Adapta el estilo al genero de la modelo (accesorios masculinos para hombres, femeninos para mujeres, apropiados para la edad en ninos)
+- Si "incluye_calzado" es false, retorna un array vacio para "calzado"
+- "prenda_principal" debe estar en ESPANOL
+
+# JSON REQUERIDO (responde SOLO con JSON valido, sin markdown):
 {
-  "prenda_principal": "[Detailed single-sentence description: garment type, colors, patterns, visible texture]",
-  "conjuntos_accesorios_recomendados": [
-    "[COMPLETE SET 1: footwear + accessories + complementary bottom/top if needed]",
-    "[COMPLETE SET 2: footwear + accessories...]",
-    "[COMPLETE SET 3: footwear + accessories...]"
+  "prenda_principal": "[Una oracion en espanol: tipo de prenda, colores, patrones, textura]",
+  "target": "[mujer_adulta | hombre_adulto | nina | nino | unisex]",
+  "incluye_calzado": true/false,
+  "calzado": [
+    { "label": "[2-3 palabras en espanol]", "detail": "[Full footwear description in English with color, style, material]" }
   ],
-  "lugares_recomendados": [
-    "[Specific physical location 1]",
-    "[Specific physical location 2]",
-    "[Specific physical location 3]"
+  "accesorios": [
+    { "label": "[2-3 palabras en espanol]", "detail": "[Full accessory description in English]" }
   ],
-  "poses_recomendadas": [
-    "[Body pose description 1]",
-    "[Body pose description 2]",
-    "[Body pose description 3]"
+  "complementos": [
+    { "label": "[2-3 palabras en espanol]", "detail": "[Full complementary item description in English: socks, belts, hats, etc.]" }
   ],
-  "iluminacion_recomendada": [
-    "[THE ABSOLUTE BEST technical lighting setup for this garment]",
-    "[Alternative lighting setup 2]",
-    "[Alternative lighting setup 3]"
+  "locacion": [
+    { "label": "[2-3 palabras en espanol]", "detail": "[Complete location description in English for image generation]" }
+  ],
+  "pose": [
+    { "label": "[2-3 palabras en espanol]", "detail": "[Complete pose description in English for image generation]" }
+  ],
+  "iluminacion": [
+    { "label": "[2-3 palabras en espanol]", "detail": "[Complete technical lighting setup description in English]" }
   ]
 }`;
 
   const parts: Array<{ text: string } | { inlineData: { data: string; mimeType: string } }> = [];
   parts.push({ text: prompt });
 
-  // Add garment image
   const imageData = await downloadImageAsBase64(garmentImageUrl);
   if (imageData) {
     parts.push({

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Search } from "lucide-react";
 import type { Database } from "@/src/types/database";
 import { ModelGrid } from "./ModelGrid";
 import { CreateModelModal } from "./CreateModelModal";
@@ -15,6 +16,9 @@ interface ModelsPageClientProps {
   presetModels: FashionModel[];
 }
 
+type GenderFilter = "all" | "female" | "male" | "non_binary";
+type SourceFilter = "all" | "mine" | "preset";
+
 export function ModelsPageClient({
   userModels,
   presetModels,
@@ -22,6 +26,9 @@ export function ModelsPageClient({
   const router = useRouter();
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editingModel, setEditingModel] = useState<FashionModel | null>(null);
+  const [genderFilter, setGenderFilter] = useState<GenderFilter>("all");
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleCreateSuccess = useCallback(() => {
     router.refresh();
@@ -52,8 +59,42 @@ export function ModelsPageClient({
     router.refresh();
   }, [router]);
 
-  const allModels: FashionModel[] = [...userModels, ...presetModels];
-  const presetIds = presetModels.map((m) => m.id);
+  const presetIds = useMemo(() => presetModels.map((m) => m.id), [presetModels]);
+
+  const filteredModels = useMemo(() => {
+    let models: FashionModel[];
+
+    if (sourceFilter === "mine") {
+      models = [...userModels];
+    } else if (sourceFilter === "preset") {
+      models = [...presetModels];
+    } else {
+      models = [...userModels, ...presetModels];
+    }
+
+    if (genderFilter !== "all") {
+      models = models.filter((m) => m.gender === genderFilter);
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      models = models.filter(
+        (m) =>
+          m.name.toLowerCase().includes(q) ||
+          (m.country?.toLowerCase().includes(q) ?? false) ||
+          (m.style?.toLowerCase().includes(q) ?? false),
+      );
+    }
+
+    return models;
+  }, [userModels, presetModels, genderFilter, sourceFilter, searchQuery]);
+
+  const filterBtnClass = (active: boolean) =>
+    `h-[32px] rounded-[8px] px-3 text-[12px] font-medium transition-colors ${
+      active
+        ? "bg-[#BEFF00] text-[#09090B]"
+        : "bg-[#27272A] text-[#71717A] hover:text-[#A1A1AA]"
+    }`;
 
   return (
     <div className="flex flex-col gap-5 sm:gap-6 px-4 py-6 sm:px-9 sm:py-8 min-h-full">
@@ -74,9 +115,77 @@ export function ModelsPageClient({
         </button>
       </div>
 
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        {/* Search */}
+        <div className="relative flex-1 max-w-[300px]">
+          <Search
+            size={14}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#52525B]"
+          />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search models..."
+            className="w-full h-[36px] rounded-[10px] bg-[#18181B] border border-[#27272A] pl-9 pr-3 text-[13px] text-[#FAFAFA] placeholder:text-[#52525B] outline-none focus:border-[#BEFF00]/50 transition-colors"
+          />
+        </div>
+
+        {/* Gender filter */}
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => setGenderFilter("all")}
+            className={filterBtnClass(genderFilter === "all")}
+          >
+            All
+          </button>
+          <button
+            onClick={() => setGenderFilter("female")}
+            className={filterBtnClass(genderFilter === "female")}
+          >
+            Female
+          </button>
+          <button
+            onClick={() => setGenderFilter("male")}
+            className={filterBtnClass(genderFilter === "male")}
+          >
+            Male
+          </button>
+          <button
+            onClick={() => setGenderFilter("non_binary")}
+            className={filterBtnClass(genderFilter === "non_binary")}
+          >
+            Non-binary
+          </button>
+        </div>
+
+        {/* Source filter */}
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => setSourceFilter("all")}
+            className={filterBtnClass(sourceFilter === "all")}
+          >
+            All
+          </button>
+          <button
+            onClick={() => setSourceFilter("mine")}
+            className={filterBtnClass(sourceFilter === "mine")}
+          >
+            My Models
+          </button>
+          <button
+            onClick={() => setSourceFilter("preset")}
+            className={filterBtnClass(sourceFilter === "preset")}
+          >
+            Presets
+          </button>
+        </div>
+      </div>
+
       {/* Model Grid */}
       <ModelGrid
-        models={allModels}
+        models={filteredModels}
         presetModelIds={presetIds}
         onEdit={handleEdit}
         onDelete={handleDelete}

@@ -70,6 +70,23 @@ export async function POST(
     console.log("[process] Garment image_url:", garment.image_url);
     console.log("[process] Config keys:", Object.keys(config));
 
+    // Build accessory string from arrays + custom fields
+    const accessoryParts: string[] = [];
+    if (Array.isArray(config.calzado)) accessoryParts.push(...config.calzado);
+    if (config.custom_calzado) accessoryParts.push(config.custom_calzado);
+    if (Array.isArray(config.accesorios)) accessoryParts.push(...config.accesorios);
+    if (config.custom_accesorios) accessoryParts.push(config.custom_accesorios);
+    if (Array.isArray(config.complementos)) accessoryParts.push(...config.complementos);
+    if (config.custom_complementos) accessoryParts.push(config.custom_complementos);
+
+    const accessorySet = accessoryParts.length > 0
+      ? accessoryParts.join(", ")
+      : "minimal complementary accessories";
+
+    const location = config.custom_location || config.location || "professional photography studio with clean white backdrop";
+    const pose = config.custom_pose || config.pose || "standing in a natural confident pose";
+    const lighting = config.custom_lighting || config.lighting || "professional studio lighting with soft shadows";
+
     // Generate the photo with art director selections
     const { buffer, mimeType, prompt } = await generateFashionPhoto({
       modelName: model.name,
@@ -78,10 +95,11 @@ export async function POST(
       refFaceUrl: model.ref_face_url,
       garmentImageUrl: garment.image_url,
       garmentDescription: config.garment_description ?? garment.description ?? "the garment shown in the reference image",
-      accessorySet: config.accessory_set ?? "minimal complementary accessories with appropriate footwear",
-      location: config.location ?? "professional photography studio with clean white backdrop",
-      pose: config.pose ?? "standing in a natural confident pose",
-      lighting: config.lighting ?? "professional studio lighting with soft shadows",
+      accessorySet,
+      location,
+      pose,
+      lighting,
+      customPrompt: config.custom_prompt as string | undefined,
       imageModel: (config.image_model as "gemini-3-pro-image-preview" | "gemini-2.5-flash-image") ?? "gemini-2.5-flash-image",
     });
 
@@ -148,9 +166,17 @@ export async function POST(
         data: { user },
       } = await supabase.auth.getUser();
       if (user) {
+        // Re-fetch generation to get config for refund amount
+        const { data: failedGen } = await admin
+          .from("generations")
+          .select("config")
+          .eq("id", generationId)
+          .single();
+        const failedConfig = (failedGen?.config as Record<string, string>) ?? {};
+        const refundAmount = failedConfig.image_model === "gemini-3-pro-image-preview" ? 10 : 5;
         await admin.rpc("refund_credits", {
           p_user_id: user.id,
-          p_amount: 5,
+          p_amount: refundAmount,
           p_generation_id: generationId,
         });
       }

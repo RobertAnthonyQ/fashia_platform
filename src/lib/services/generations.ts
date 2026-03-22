@@ -57,6 +57,7 @@ export async function getGeneration(userId: string, generationId: string) {
 export async function createGeneration(
   userId: string,
   input: CreateGenerationInput,
+  creditCost: number = 5,
 ) {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -68,7 +69,7 @@ export async function createGeneration(
       config:
         input.config as unknown as Database["public"]["Tables"]["generations"]["Insert"]["config"],
       output_type: input.output_type,
-      credits_used: 5,
+      credits_used: creditCost,
       prompt_used: "",
       status: "pending" as GenerationStatus,
     })

@@ -3,11 +3,20 @@ import { z } from "zod";
 const outputTypeEnum = z.enum(["image", "video"]);
 
 export const generationConfigSchema = z.object({
-  accessory_set: z.string().optional(),
+  calzado: z.array(z.string()).optional(),
+  accesorios: z.array(z.string()).optional(),
+  complementos: z.array(z.string()).optional(),
   location: z.string().optional(),
   pose: z.string().optional(),
   lighting: z.string().optional(),
   garment_description: z.string().optional(),
+  custom_calzado: z.string().optional(),
+  custom_accesorios: z.string().optional(),
+  custom_complementos: z.string().optional(),
+  custom_location: z.string().optional(),
+  custom_pose: z.string().optional(),
+  custom_lighting: z.string().optional(),
+  custom_prompt: z.string().max(500).optional(),
   image_model: z
     .enum(["gemini-3-pro-image-preview", "gemini-2.5-flash-image"])
     .optional()

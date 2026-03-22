@@ -7,7 +7,7 @@ import { analyzeGarment } from "@/src/lib/ai/art-director";
  * Art Director AI analyzes garment and returns creative suggestions.
  */
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
@@ -20,6 +20,9 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const body = await req.json().catch(() => ({}));
+    const modelGender = body.model_gender as string | undefined;
+
     const { data: garment, error } = await supabase
       .from("garments")
       .select("*")
@@ -31,7 +34,7 @@ export async function POST(
       return NextResponse.json({ error: "Garment not found" }, { status: 404 });
     }
 
-    const suggestions = await analyzeGarment(garment.image_url);
+    const suggestions = await analyzeGarment(garment.image_url, modelGender);
 
     return NextResponse.json(suggestions);
   } catch (err) {

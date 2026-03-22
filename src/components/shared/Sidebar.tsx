@@ -1,8 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Layers, Users, Image, Zap, Settings } from "lucide-react";
+import { Layers, Users, Image, Zap, Settings, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import dynamic from "next/dynamic";
+
+const BuyCreditsSection = dynamic(
+  () =>
+    import("@/src/components/credits/BuyCreditsSection").then((m) => ({
+      default: m.BuyCreditsSection,
+    })),
+  { ssr: false },
+);
 
 interface SidebarProfile {
   full_name: string | null;
@@ -25,6 +35,7 @@ const navItems = [
 ];
 
 export function Sidebar({ activePath, profile }: SidebarProps) {
+  const [buyOpen, setBuyOpen] = useState(false);
   const initials = profile?.full_name
     ? profile.full_name
         .split(" ")
@@ -77,15 +88,20 @@ export function Sidebar({ activePath, profile }: SidebarProps) {
       {/* Bottom Section */}
       <div className="flex flex-col gap-3 p-4">
         {/* Credit Badge */}
-        <div className="flex h-9 items-center gap-1.5 rounded-lg bg-[#18181B] px-3">
+        <div className="flex h-9 items-center gap-1.5 rounded-lg bg-[#18181B] pl-3 pr-1">
           <span className="text-[13px] text-[#BEFF00]">⚡</span>
           <span className="text-[13px] font-medium text-[#FAFAFA]">
             {profile?.credits ?? 0} credits
           </span>
           <div className="flex-1" />
-          <span className="rounded bg-[#BEFF00] px-1.5 py-0.5 text-[10px] font-bold text-[#09090B]">
-            PRO
-          </span>
+          <button
+            type="button"
+            onClick={() => setBuyOpen(true)}
+            title="Comprar créditos"
+            className="flex h-7 w-7 items-center justify-center rounded-md bg-[#BEFF00] text-[#09090B] hover:opacity-90 transition-opacity"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
         </div>
 
         {/* User Row */}
@@ -108,6 +124,34 @@ export function Sidebar({ activePath, profile }: SidebarProps) {
 
       {/* Bottom Divider */}
       <div className="h-px w-full bg-[#27272A]" />
+
+      {/* Buy Credits Modal */}
+      {buyOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={() => setBuyOpen(false)}
+          />
+          <div className="relative w-full max-w-5xl mx-0 sm:mx-4 overflow-hidden rounded-t-2xl sm:rounded-2xl border border-[#27272A] bg-[#0E0E10] shadow-2xl max-h-[95vh] overflow-y-auto">
+            {/* Modal header */}
+            <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-[#1E1E22] bg-[#0E0E10]">
+              <span className="font-heading text-[17px] font-semibold text-[#FAFAFA]">
+                Comprar créditos
+              </span>
+              <button
+                type="button"
+                onClick={() => setBuyOpen(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-[#52525B] hover:bg-[#1E1E22] hover:text-[#FAFAFA] transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="px-6 py-6">
+              <BuyCreditsSection />
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

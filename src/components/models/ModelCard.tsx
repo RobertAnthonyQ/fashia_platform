@@ -13,6 +13,8 @@ interface ModelMetadata {
   bust_cm?: number;
   waist_cm?: number;
   hips_cm?: number;
+  chest_cm?: number;
+  shoulder_width_cm?: number;
   body_type?: string;
   skin_tone?: string;
   hair_color?: string;
@@ -168,11 +170,17 @@ export function ModelCard({
           )}
         </div>
 
-        {metadata?.bust_cm && metadata?.waist_cm && metadata?.hips_cm && (
-          <p className="text-[11px] text-[#52525B]">
-            {metadata.bust_cm}-{metadata.waist_cm}-{metadata.hips_cm}
-          </p>
-        )}
+        {model.gender === "male"
+          ? metadata?.chest_cm && metadata?.waist_cm && metadata?.shoulder_width_cm && (
+              <p className="text-[11px] text-[#52525B]">
+                Ch:{metadata.chest_cm} W:{metadata.waist_cm} Sh:{metadata.shoulder_width_cm}
+              </p>
+            )
+          : metadata?.bust_cm && metadata?.waist_cm && metadata?.hips_cm && (
+              <p className="text-[11px] text-[#52525B]">
+                {metadata.bust_cm}-{metadata.waist_cm}-{metadata.hips_cm}
+              </p>
+            )}
       </div>
     </div>
   );

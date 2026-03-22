@@ -129,12 +129,15 @@ export async function POST(req: Request) {
       );
     }
 
-    // Debit credits atomically (generation = 5 credits)
+    // Determine credit cost based on model
+    const imageModel = parsed.data.config?.image_model ?? "gemini-2.5-flash-image";
+    const creditCost = imageModel === "gemini-3-pro-image-preview" ? 10 : 5;
+
     const { data: ok, error: creditError } = await debitCredits(
       user.id,
-      5,
+      creditCost,
       "generation",
-      "Photo generation",
+      `Photo generation (${imageModel === "gemini-3-pro-image-preview" ? "Pro" : "Flash"})`,
     );
     if (creditError || !ok) {
       return NextResponse.json(
@@ -143,12 +146,11 @@ export async function POST(req: Request) {
       );
     }
 
-    const { data, error } = await createGeneration(user.id, parsed.data);
+    const { data, error } = await createGeneration(user.id, parsed.data, creditCost);
     if (error) {
-      // Refund on failure — generation not yet created so we can't use generationId
       await supabase.rpc("refund_credits", {
         p_user_id: user.id,
-        p_amount: 5,
+        p_amount: creditCost,
         p_generation_id: "",
       });
       return NextResponse.json({ error: "Server error" }, { status: 500 });

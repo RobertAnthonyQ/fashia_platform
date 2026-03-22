@@ -1,45 +1,30 @@
-import type { Metadata } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
-import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import "./globals.css";
+import React from "react"
+import type { Metadata, Viewport } from 'next'
+import { Inter } from 'next/font/google'
 
-const inter = Inter({
-  variable: "--font-sans",
-  subsets: ["latin"],
-});
+import './globals.css'
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-heading",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
 export const metadata: Metadata = {
-  title: "Fashia — AI Fashion Photo Studio",
-  description:
-    "Generate professional fashion photos with AI. Upload garments, choose models, and create stunning product imagery.",
-  openGraph: {
-    title: "Fashia — AI Fashion Photo Studio",
-    description: "Generate professional fashion photos with AI.",
-    type: "website",
-  },
-};
+  title: 'Fashia - Generative AI for Fashion Retail',
+  description: 'From flat-lay to video campaign in minutes. Fashia uses generative AI to transform fashion product photography into stunning editorial content.',
+}
+
+export const viewport: Viewport = {
+  themeColor: '#050505',
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${inter.variable} ${spaceGrotesk.variable} antialiased`}
-      >
-        <TooltipProvider>
-          {children}
-          <Toaster richColors position="bottom-right" />
-        </TooltipProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans antialiased bg-[#050505] text-zinc-100`}>
+        {children}
       </body>
     </html>
-  );
+  )
 }

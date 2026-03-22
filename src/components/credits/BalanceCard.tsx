@@ -38,7 +38,7 @@ export function BalanceCard({ credits, plan }: BalanceCardProps) {
           </span>
         )}
         <Link
-          href="/credits/buy"
+          href="/credits#buy-credits"
           className="inline-flex items-center justify-center gap-2 rounded-[10px] h-[38px] sm:h-[42px] px-4 sm:px-5 bg-[#BEFF00] text-[13px] sm:text-[14px] font-semibold text-[#09090B] hover:opacity-90 transition-opacity"
         >
           <span>⚡</span>

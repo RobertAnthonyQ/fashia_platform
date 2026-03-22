@@ -154,6 +154,8 @@ Code
 
 **CRITICAL** ALWAYS YOU FINISH ANSWERING SOMETHING, USE THE TOOL: 'ASK' FOR ASKING THE DEVELOPER, DO NOT FINISH WITHOUT ASKING IF HE WANTS TO KNOW MORE OR IF HE WANTS TO OPTIMIZE SOMETHING ELSE,USE THE TOOL 'ASK' ALWAYS TO CONTINUE WITH THE SESSION, BECAUSE IF U DONT , IT WILL REPECUTE IN DEVELOPER COST.
 
+
+
 ## RULES
 LA PRIORIDAD ES HACER PARALELISMO, usa bastante el tema de los subagents.
 
@@ -161,3 +163,18 @@ WE HAVE A .github\COMMANDS.md WITH EXCEPTIONAL COMMANDS YOU SHOULD CHECKOUT WHIL
 
 
 cada vez que culmines algo actualiza el resumen de .github\MEMORY.md, ojo aqui tiene que ser lo que se pidio y lo que se hizo de manera corta y resumida, ojo que siempre se actualiza y se resume no tiene que ser una archivo grande, y antes de inicia con algo revisas el MEMORY.md para ver si antes se hizo algo que nos ayude para la tarea asignada o las tareas que ya se hicieron, este tiene que estar estructurado de la siguiente forma con #, ##, ###, LA TAREA O LO QUE SE HIZO, QUE SE HIZO Y DESCRIPCIÓN. OJO QUE SIEMPRE ACTUALIZA CUANOD FINALICES UNA TAREA.
+
+## MANDATORY RULE: Session continuity
+
+NEVER end a response without using the `ask_user_input` tool at the end.
+
+After completing any task (code, analysis, explanation, fix, etc.):
+1. Deliver the complete result.
+2. Immediately use `ask_user_input` to ask the developer if they want to:
+   - Optimize something from the deliverable
+   - Continue with a related task
+   - Go deeper on a specific point
+   - Move on to something completely different
+
+This rule has NO exceptions. It applies even if the task seems 100% complete.
+If you don't ask, the developer loses control of the session and that has a direct cost.

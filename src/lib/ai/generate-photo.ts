@@ -14,6 +14,7 @@ export interface GeneratePhotoInput {
   location: string;
   pose: string;
   lighting: string;
+  customPrompt?: string;
 
   imageModel: "gemini-3-pro-image-preview" | "gemini-2.5-flash-image";
 }
@@ -105,7 +106,7 @@ export async function generateFashionPhoto(
           inlineData: { data: faceData.base64, mimeType: faceData.mimeType },
         },
         {
-          text: `This is a photograph of ${input.modelName}, a ${input.modelGender} fashion model. Study this face carefully. Memorize every facial feature: the exact shape of the eyes, nose, mouth, jawline, cheekbones, eyebrows, skin tone, and any unique features. You will need to reproduce THIS EXACT PERSON in the next image you generate.`,
+          text: `This is a real photograph of ${input.modelName}, a ${input.modelGender} fashion model. Study this face as a photographer would — memorize every real human detail: the exact shape of the eyes, nose, mouth, jawline, cheekbones, eyebrows, skin tone, pores, skin texture, any moles or marks, and every unique imperfection. You will reproduce THIS EXACT PERSON with all their real human characteristics in the next image.`,
         },
       ],
     });
@@ -114,7 +115,7 @@ export async function generateFashionPhoto(
       role: "model",
       parts: [
         {
-          text: `I have carefully studied the face of ${input.modelName}. I can see all their distinctive facial features including their specific eye shape, nose structure, lip shape, jawline contour, skin tone, and unique characteristics. I will reproduce this exact person's face in the generated image.`,
+          text: `I have carefully studied the real photograph of ${input.modelName}. I can see every detail: their specific eye shape, nose structure, lip shape, jawline contour, skin tone, visible pores, skin texture variations, and all unique imperfections. I will reproduce this exact real person with all their human characteristics — no smoothing, no idealizing.`,
         },
       ],
     });
@@ -142,33 +143,69 @@ export async function generateFashionPhoto(
     });
   }
 
-  const prompt = `Now generate a fashion photograph. USE THE FACE REFERENCE IMAGE${faceData ? "S I PROVIDED" : ""} — the person in the generated photo MUST have the IDENTICAL face as the reference. Copy the face pixel by pixel: same eyes, same nose, same mouth, same jawline, same skin color, same everything.
+  const prompt = `Generate a real photograph — NOT an illustration, NOT a render, NOT AI art. This must look like it was taken by a professional fashion photographer on set with a real camera and a real person.
+
+USE THE FACE REFERENCE IMAGE${faceData ? "S I PROVIDED" : ""} — the person in the generated photo MUST have the IDENTICAL face as the reference.
 
 Physical description of the model: ${input.modelDescription}
 
-GENERATE THIS IMAGE:
-Ultra-realistic high-end fashion editorial photography, shot on medium format digital camera. ${input.modelName} (USE THE REFERENCE FACE IMAGE AS THE MODEL'S FACE) is ${input.pose}, wearing ${input.garmentDescription} (WEARING THE EXACT GARMENT FROM THE REFERENCE IMAGE), styled with ${input.accessorySet}. Set in ${input.location}. Expert fashion photographer framing and composition. Professional focal length 85mm at f/2.0, ${input.lighting}. Highly detailed, 8k resolution, RAW photo.
+SCENE DESCRIPTION:
+${input.modelName} is ${input.pose}, wearing ${input.garmentDescription} (MATCH THE EXACT GARMENT FROM THE REFERENCE IMAGE), styled with ${input.accessorySet}. The scene is set in ${input.location}. ${input.lighting}.
 
-FACE IDENTITY — ABSOLUTE #1 PRIORITY — NON-NEGOTIABLE:
-- YOU MUST USE THE REFERENCE FACE IMAGE to generate the model's face
-- The face in the output image must be a COPY of the reference face — not inspired by, not similar to, but THE SAME face
-- Match EXACTLY: eye shape, eye color, iris pattern, nose bridge width, nose tip shape, nostril shape, lip thickness, lip shape, cupid's bow, jawline angle, chin shape, cheekbone height, eyebrow arch, eyebrow thickness, forehead size, ear shape, skin tone, skin texture, facial hair (if any), moles, freckles, beauty marks
-- The face must be clearly visible, front-facing or three-quarter angle, well-lit
-- If you cannot match the face exactly, get as close as humanly possible — the face reference is the MOST IMPORTANT input
+IMAGE FORMAT — MANDATORY:
+- Aspect ratio: 4:5 portrait (1080x1350 pixels) — this is the Instagram standard format
+- The image MUST be vertical/portrait orientation, taller than wide
+- Frame the full body or 3/4 body within this vertical format
 
-GARMENT ACCURACY:
-- The clothing must exactly match the reference garment image — same design, colors, fabric, pattern, details
-- Natural fabric draping with realistic wrinkles and folds at movement points
-- The model must be fully dressed including footwear from the accessory set
+CAMERA & LENS — shoot as if using real equipment:
+- Camera: Hasselblad X2D 100C or Canon EOS R5, medium format sensor
+- Lens: 50mm f/4 (NOT 85mm f/1.4 — we want DEEP depth of field, the background must be SHARP and fully detailed, NOT blurry)
+- Aperture: f/8 to f/11 — everything in focus, foreground to background
+- ISO 100, shutter speed 1/250s
+- The background and environment must be COMPLETELY SHARP and IN FOCUS with full detail — NO bokeh, NO blur, NO soft background
+- Color science: natural Hasselblad color rendering, no orange-teal grading, no Instagram filters
 
-PHOTOREALISM:
-- Must be indistinguishable from a real DSLR photograph
-- Realistic skin: visible pores, natural texture, subtle imperfections, subsurface scattering
-- Natural body proportions, correct hand anatomy
-- Professional color grading, rich dynamic range
-- Sharp focus on subject, natural background bokeh
-- No AI artifacts, no extra fingers, no impossible anatomy
-- No text, watermarks, logos, or borders`;
+FACE IDENTITY — #1 PRIORITY:
+- Copy the reference face exactly: same eye shape, eye color, nose bridge, nose tip, nostril shape, lip thickness, lip shape, jawline angle, chin shape, cheekbone height, eyebrow arch, skin tone, skin texture, facial hair if any, moles, freckles, beauty marks
+- The face must be clearly visible and well-lit
+- Do NOT beautify, smooth, or idealize the face — keep it exactly as the reference
+
+SKIN & BODY — real human imperfections are MANDATORY:
+- Visible pores on nose, cheeks, and forehead — not smoothed out
+- Subtle under-eye texture, fine lines appropriate to age
+- Visible arm hair, leg hair, or peach fuzz where natural
+- Slight color variation in skin: redness on knuckles, darker elbows/knees, veins visible on hands and wrists
+- Skin must show subsurface scattering where backlit — translucent ear tips, light through thin skin
+- Natural nail texture with subtle ridges
+- Lips with natural dryness lines, not plastic-looking
+- Teeth (if smiling) with natural slight color variation, not perfectly white
+- NO airbrushed skin, NO porcelain doll effect, NO waxy appearance
+
+GARMENT & FABRIC — real textile behavior:
+- The garment must EXACTLY match the reference image: same design, colors, fabric weave, pattern, stitching, labels, hardware
+- Fabric must behave physically correct: gravity pulls it down, tension where the body stretches it, compression wrinkles at joints (elbows, waist, knees)
+- Visible micro-texture of the fabric weave (cotton threads, denim twill, knit loops)
+- Subtle lint, fiber texture, or fabric pilling where appropriate for the material type
+- Seams, hems, and stitching must be visible at close inspection
+- If footwear is specified in the accessory set, the model must wear it. If no footwear is specified, frame the shot so feet are not prominent
+
+ENVIRONMENT & BACKGROUND — sharp and detailed:
+- The location must be rendered with the SAME level of detail as the model — it is NOT a backdrop, it is a real place
+- Every surface must have texture: concrete grain, wood grain, brick mortar, grass blades, asphalt cracks
+- Environmental light interaction: real shadows on the ground, light bouncing off walls, reflections in puddles or glass
+- Ambient objects must be realistic: dust particles in light beams, weathering on surfaces, natural imperfections in architecture
+- The ground the model stands on must show realistic contact: shoe impression, weight distribution shadow
+
+WHAT TO ABSOLUTELY AVOID:
+- No smooth/plastic/waxy skin — this is the #1 sign of AI photos
+- No background blur or bokeh — the background must be as sharp as the subject
+- No symmetrical perfection in face or body — real humans are slightly asymmetric
+- No floating or weightless appearance — the model must look grounded with real gravity
+- No oversaturated or HDR look — keep colors natural and film-like
+- No extra fingers, merged fingers, or deformed hands
+- No text, watermarks, logos, or borders in the image
+- No glowing skin, lens flare halos, or artificial light blooms
+- No uncanny valley expressions — the expression must feel natural and candid`;
 
   turn2Parts.push({ text: prompt });
 
