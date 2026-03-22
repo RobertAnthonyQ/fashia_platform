@@ -158,7 +158,8 @@ export async function POST(req: Request) {
 
     // Trigger generation processing asynchronously
     // We fire-and-forget so the client can start polling immediately
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL
+      ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
     const cookieHeader = req.headers.get("cookie") ?? "";
     fetch(`${baseUrl}/api/generations/${data!.id}/process`, {
       method: "POST",
