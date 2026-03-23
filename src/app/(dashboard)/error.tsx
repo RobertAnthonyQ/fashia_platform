@@ -16,16 +16,16 @@ export default function Error({
         <AlertTriangle className="h-8 w-8 text-red-400" />
       </div>
       <h2 className="text-lg font-semibold text-zinc-200">
-        Something went wrong
+        Algo salió mal
       </h2>
       <p className="mt-1 text-sm text-zinc-400 max-w-md">
-        An unexpected error occurred. Please try again.
+        Se ha producido un error inesperado. Por favor, inténtelo de nuevo.
       </p>
       <Button
         onClick={reset}
         className="mt-4 bg-[#BEFF00] text-black hover:bg-[#BEFF00]/90 font-semibold rounded-lg"
       >
-        Try Again
+        Intentar otra vez
       </Button>
     </div>
   );
