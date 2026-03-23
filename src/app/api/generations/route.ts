@@ -160,10 +160,12 @@ export async function POST(req: Request) {
     // We fire-and-forget so the client can start polling immediately
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL
       ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-    const cookieHeader = req.headers.get("cookie") ?? "";
+    const internalSecret = process.env.INTERNAL_API_SECRET ?? "";
     fetch(`${baseUrl}/api/generations/${data!.id}/process`, {
       method: "POST",
-      headers: { cookie: cookieHeader },
+      headers: {
+        "x-internal-secret": internalSecret,
+      },
     }).catch((err) => {
       console.error("Failed to trigger generation process:", err);
     });

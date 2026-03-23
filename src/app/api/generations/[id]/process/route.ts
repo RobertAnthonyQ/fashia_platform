@@ -3,23 +3,43 @@ import { createClient } from "@/src/lib/supabase/server";
 import { createAdminClient } from "@/src/lib/supabase/admin";
 import { generateFashionPhoto } from "@/src/lib/ai/generate-photo";
 
+const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "";
+
 /**
  * Internal endpoint to process a pending generation.
  * Uses admin client for all DB/storage writes to bypass RLS.
+ * Auth: accepts either a valid user cookie OR the internal secret header.
  */
 export async function POST(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: generationId } = await params;
-  const supabase = await createClient();
   const admin = createAdminClient();
+  let userId: string | null = null;
 
   try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
+    // Auth: internal secret header OR user cookie
+    const internalToken = _req.headers.get("x-internal-secret");
+
+    if (INTERNAL_SECRET && internalToken === INTERNAL_SECRET) {
+      // Trusted internal call — get user_id from the generation itself
+      const { data: genCheck } = await admin
+        .from("generations")
+        .select("user_id")
+        .eq("id", generationId)
+        .single();
+      userId = genCheck?.user_id ?? null;
+    } else {
+      // Fallback: cookie-based auth
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      userId = user?.id ?? null;
+    }
+
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -30,7 +50,7 @@ export async function POST(
         "*, fashion_models(id, name, gender, description, ref_face_url, metadata), garments(id, image_url, description)",
       )
       .eq("id", generationId)
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .single();
 
     if (fetchError || !gen) {
@@ -105,7 +125,7 @@ export async function POST(
 
     // Upload to storage
     const ext = mimeType.includes("png") ? "png" : "jpg";
-    const filePath = `${user.id}/${generationId}/${Date.now()}_output.${ext}`;
+    const filePath = `${userId}/${generationId}/${Date.now()}_output.${ext}`;
 
     const { error: uploadError } = await admin.storage
       .from("outputs")
@@ -162,10 +182,7 @@ export async function POST(
       .eq("id", generationId);
 
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
+      if (userId) {
         // Re-fetch generation to get config for refund amount
         const { data: failedGen } = await admin
           .from("generations")
@@ -175,7 +192,7 @@ export async function POST(
         const failedConfig = (failedGen?.config as Record<string, string>) ?? {};
         const refundAmount = failedConfig.image_model === "gemini-3-pro-image-preview" ? 10 : 5;
         await admin.rpc("refund_credits", {
-          p_user_id: user.id,
+          p_user_id: userId,
           p_amount: refundAmount,
           p_generation_id: generationId,
         });
