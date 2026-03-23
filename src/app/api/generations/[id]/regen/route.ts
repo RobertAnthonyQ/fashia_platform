@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { createAdminClient } from "@/src/lib/supabase/admin";
 import { debitCredits, refundCredits } from "@/src/lib/services/credits";
+import { fireProcessGeneration } from "@/src/lib/services/process-generation";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -70,16 +71,8 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Server error" }, { status: 500 });
     }
 
-    // Fire process endpoint
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL
-      ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-    const internalSecret = process.env.INTERNAL_API_SECRET ?? "";
-    fetch(`${baseUrl}/api/generations/${gen.id}/process`, {
-      method: "POST",
-      headers: {
-        "x-internal-secret": internalSecret,
-      },
-    }).catch((err) => console.error("Failed to trigger regen:", err));
+    // Trigger generation processing directly (no HTTP roundtrip)
+    fireProcessGeneration(gen.id);
 
     return NextResponse.json(gen, { status: 201 });
   } catch {
